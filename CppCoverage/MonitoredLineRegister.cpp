@@ -47,6 +47,11 @@ namespace CppCoverage
 				return isNativeModule_ || !isIlOnly_;
 			}
 
+			bool IsMixedMode(void) const
+			{
+				return !isNativeModule_ && !isIlOnly_;
+			}
+
 		  private:
 			typedef struct _CLI_HEADER_FRAGMENT {
 			DWORD ByteCount;
@@ -128,7 +133,8 @@ namespace CppCoverage
 	    HANDLE hProcess,
 	    void* baseOfImage)
 	{
-		if (!ModuleKind{}.IsNativeModule(
+		auto moduleKind = ModuleKind{};
+		if (!moduleKind.IsNativeModule(
 			hProcess, reinterpret_cast<DWORD64>(baseOfImage)))
 		{
 			LOG_INFO << modulePath.wstring()
@@ -141,7 +147,8 @@ namespace CppCoverage
 		moduleInfo_ = std::make_unique<FileFilter::ModuleInfo>(
 		    hProcess, modulePath, baseOfImage);
 
-		return debugInformationEnumerator_->Enumerate(modulePath, *this);
+		return debugInformationEnumerator_->Enumerate(modulePath, 
+			moduleKind.IsMixedMode(), *this);
 	}
 
 	//--------------------------------------------------------------------------

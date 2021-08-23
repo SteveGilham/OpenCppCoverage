@@ -88,7 +88,7 @@ namespace CppCoverageTest
 
 		auto binary = TestCoverageConsole::GetOutputBinaryPath();
 		ASSERT_TRUE(debugInformationEnumerator.Enumerate(
-		    binary, debugInformationHandler));
+		    binary, true, debugInformationHandler));
 
 		auto lineWithDebugInfo = GetLineNumbersWithTag(
 		    debugInformationHandler.selectedFullPath_, L"@DebugInfoExpected");

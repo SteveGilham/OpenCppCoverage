@@ -62,6 +62,7 @@ namespace CppCoverage
 	  public:
 		explicit DebugInformationEnumerator(const std::vector<SubstitutePdbSourcePath>&);
 		bool Enumerate(const std::filesystem::path&,
+					   bool isMixedMode,
 		               IDebugInformationHandler&);
 
 	  private:
@@ -75,5 +76,6 @@ namespace CppCoverage
 
 		std::vector<IDebugInformationHandler::Line> lines_;
 		const std::vector<SubstitutePdbSourcePath> substitutePdbSourcePaths_;
+		bool _isMixedMode;
 	};
 }

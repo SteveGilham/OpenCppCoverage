@@ -215,16 +215,19 @@ namespace CppCoverage
 	//--------------------------------------------------------------------------
 	DebugInformationEnumerator::DebugInformationEnumerator(
 	    const std::vector<SubstitutePdbSourcePath>& substitutePdbSourcePaths)
-		: substitutePdbSourcePaths_{ substitutePdbSourcePaths }
+		: substitutePdbSourcePaths_{ substitutePdbSourcePaths },
+		  _isMixedMode{false}
 	{
 	}
 
 	//-------------------------------------------------------------------------
 	bool
 	DebugInformationEnumerator::Enumerate(const std::filesystem::path& path,
+										  bool isMixedMode,
 	                                      IDebugInformationHandler& handler)
 	{
 		auto sourcePtr = LoadDataForExe(path);
+		_isMixedMode = isMixedMode;
 
 		if (!sourcePtr)
 			return false;
@@ -301,28 +304,30 @@ namespace CppCoverage
 				THROW("DIA: Cannot find symbol");
 			}
 
-			// go from block to function as needed
-
-			DWORD tag{ 0 };
-			symbol->get_symTag(&tag);
-
-			CComPtr<IDiaSymbol> probe{ symbol };
-
-			while (tag != SymTagEnum::SymTagFunction)
+			if (_isMixedMode)
 			{
-				CComPtr<IDiaSymbol> parent;
-				if (probe->get_lexicalParent(&parent) != S_OK)
-				THROW("DIA: Cannot get function");
-				parent->get_symTag(&tag);
-				probe = parent;
-			}
+				// for mixed-mode go from block to function as needed
+				DWORD tag{ 0 };
+				symbol->get_symTag(&tag);
 
-			// by observation this fails (S_FALSE) for unmanaged functions
-                        // which of course have no metadata token value
-			DWORD token{ 0 };
-			auto check = probe->get_token(&token);
-			if (check == S_OK && token != 0) {
-				return;
+				CComPtr<IDiaSymbol> probe{ symbol };
+
+				while (tag != SymTagEnum::SymTagFunction)
+				{
+					CComPtr<IDiaSymbol> parent;
+					if (probe->get_lexicalParent(&parent) != S_OK)
+					THROW("DIA: Cannot get function");
+					parent->get_symTag(&tag);
+					probe = parent;
+				}
+
+				// by observation this fails (S_FALSE) for unmanaged functions
+				// which of course have no metadata token value
+				DWORD token{ 0 };
+				auto check = probe->get_token(&token);
+				if (check == S_OK && token != 0) {
+					return;
+				}
 			}
 
 			unsigned long symIndex = 0;
